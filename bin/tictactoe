@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 require 'pry'
 require_relative '../lib/tic_tac_toe.rb'
-game = TicTacToe.new
+puts "Welcome! Would you like to play as X or O?"
+player_symbol = gets.chomp
+player_symbol == "X" ? computer_symbol = "O" : computer_symbol = "X"
+game = TicTacToe.new(computer_symbol)
 game.play

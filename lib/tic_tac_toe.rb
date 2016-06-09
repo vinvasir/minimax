@@ -1,6 +1,53 @@
 class TicTacToe
-  def initialize
-    @board = Array.new(9, " ")
+  attr_accessor :computer_symbol, :computer_choice, :board
+  
+  def initialize(computer_symbol, board=Array.new(9, " "))
+    @board = board
+    @computer_symbol = computer_symbol
+  end
+  
+  def score
+    if winner == @computer_symbol
+        return 10
+    elsif draw?
+        return 0
+    else
+        return -10
+    end
+  end
+  
+  def minimax(game=self)
+    return score if game.over?
+    scores = [] # an array of scores
+    moves = []  # an array of move indeces on the board
+
+    # Populate the scores array, recursing as needed
+    game.available_moves.each do |move_index|  #this forced me to change the TicTacToe class. remember to double-check it
+        possible_board = game.board.dup
+        possible_board[move_index] = @computer_symbol
+        possible_game = TicTacToe.new(@computer_symbol, possible_board)
+        scores.push minimax(possible_game) #need some way of passing the possible_game into minimax. Does this work?
+        moves.push move_index
+    end
+
+    # Do the min or the max calculation
+    if game.current_player == @computer_symbol
+        # This is the max calculation
+        max_score_index = scores.each_with_index.max[1]
+        @choice = moves[max_score_index]
+        return scores[max_score_index]
+    else
+        # This is the min calculation
+        min_score_index = scores.each_with_index.min[1]
+        @computer_choice = moves[min_score_index]
+        return scores[min_score_index]
+    end
+  end
+  
+  def computer_move
+    minimax
+    @board[@computer_choice] = @computer_symbol
+    display_board
   end
 
   WIN_COMBINATIONS = [
@@ -36,44 +83,59 @@ class TicTacToe
     position.to_i.between?(1,9) && !position_taken?(position.to_i-1)
   end
 
-  def turn
-    puts "Please enter 1-9:"
-    input = gets.strip
-    if valid_move?(input)
-      move(input, current_player) #this should use the current_player method as an argument
-    else
-      turn
+  def available_moves #this should return an array of index positions that are empty
+    @avail = []
+    @board.each_with_index do |position, index|
+      @avail.push(index) if position == " "
     end
-    display_board
+    return @avail
+  end
+
+  def turn
+    if current_player == @computer_symbol
+      computer_move
+    else
+      puts "Please enter 1-9:"
+      input = gets.strip
+      if valid_move?(input)
+        move(input, current_player) #this should use the current_player method as an argument
+      else
+        turn
+      end
+      display_board
+    end  
   end
 
   def won?
 
     matches = WIN_COMBINATIONS.select do |combo|
 
-     o_wins = combo.all? do |space|
-          @board[space]=="O"  #needed to change it to just board[space]. Also needed to remove the "if" I had here, because "all?" already checks for truth
-        end #end of combo.all? and the "winning" declaration
+      o_wins = combo.all? do |space|
+        @board[space]=="O"  #needed to change it to just board[space]. Also needed to remove the "if" I had here, because "all?" already checks for truth
+      end #end of combo.all? and the "winning" declaration
+        
       x_wins = combo.all? do |space|
-          @board[space]=="X"  #needed to change it to just board[space]. Also needed to remove the "if" I had here, because "all?" already checks for truth
-        end #end of combo.all? and the "winning" declaration
+        @board[space]=="X"  #needed to change it to just board[space]. Also needed to remove the "if" I had here, because "all?" already checks for truth
+      end #end of combo.all? and the "winning" declaration
 
       o_wins || x_wins # this was the key that allowed me to win. could also condense the combo.all? methods' code blocks into curlicue brackets
     end #end of WIN_COMBINATONS.each
-   final_check = matches.any? do |i|
-    i.length>1
-   end
+    
+    final_check = matches.any? do |i|
+      i.length>1
+    end
+    
     if final_check
       return matches[0]
-      else
+    else
       return false
     end #end of the return conditional
   end # end of the won? method
 
   def full?
-      @board.all? do |space|
-        space=="X" || space=="O"
-      end
+    @board.all? do |space|
+      space=="X" || space=="O"
+    end
   end
 
   def draw?
@@ -87,7 +149,7 @@ class TicTacToe
   def over?
     if won? || draw?
       return true
-      else
+    else
       return false
     end
   end
@@ -109,7 +171,7 @@ class TicTacToe
   def current_player
     if turn_count % 2 == 1
       return "O"
-      else
+    else
       return "X"
     end
   end
